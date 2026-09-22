@@ -54,6 +54,11 @@ make health                   # {"status":"ok","emails":8,"chunks":8}
 make ask Q="which serial number was RMA'd?"
 ```
 
+Real output from that last pair of commands — BM25 over the 8 sample mails, the
+`score_threshold` doing its job, and each hit carrying the file it came from:
+
+![make health and make ask against the sample archive](docs/demo-retrieval.png)
+
 `DIFY_NETWORK` in `.env` is the docker network Dify runs on (`docker_default` when
 Dify's compose lives in `dify/docker`). The service is then reachable from Dify's
 containers as `http://mailrag:8000`.
@@ -118,6 +123,15 @@ This is Dify's documented shape, including its error envelope: `1001` malformed
 `Authorization` header, `1002` bad key, `2001` unknown `knowledge_id`. `metadata`
 must be an object — Dify writes the score and title into it before the chunk
 reaches the model, and a `null` there silently loses both.
+
+The service publishes its own schema, so the contract is inspectable without
+reading the code — `http://localhost:$MAILRAG_PORT/docs`:
+
+![GET /health, POST /retrieval and POST /reindex in the FastAPI schema browser](docs/api-endpoints.png)
+
+(Try-it-out there cannot exercise `/retrieval`: the bearer token is a plain header
+parameter rather than a declared security scheme, and the schema browser drops it —
+so the button returns the documented `1001`. Use `make ask`, or curl.)
 
 ## Design notes
 
