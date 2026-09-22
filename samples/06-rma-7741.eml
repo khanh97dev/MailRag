@@ -1,0 +1,27 @@
+From: Linh Pham <linh.pham@northbridge.example>
+To: Support <support@kainetworks.example>
+Subject: RMA request - FOC2512A1BF dead on arrival (PO-48812)
+Date: Sat, 14 Mar 2026 10:12:58 +0700
+Message-ID: <rma-request-7741@northbridge.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hi support,
+
+One of the switches from PO-48812 does not power on out of the box: serial
+FOC2512A1BF. No LEDs, no fan spin, tested on two known-good power feeds.
+
+Please raise an RMA. The unit is still in its original packaging and sitting in
+our Hanoi warehouse.
+
+Linh
+
+---
+
+From: Support <support@kainetworks.example>
+Sent: 14 March 2026 15:31
+Subject: RE: RMA request - FOC2512A1BF dead on arrival (PO-48812)
+
+Hi Linh, logged as RMA-7741. Advance replacement approved, unit ships Monday 16
+March, DHL 7761 4498 113. Please return the faulty unit within 15 days using the
+prepaid label attached.

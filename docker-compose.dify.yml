@@ -1,0 +1,17 @@
+# Overlay: put MailRag on Dify's docker network, so workflow nodes can reach it
+# as http://mailrag:8000 .
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dify.yml up -d --build
+#
+# Without this, a node calling http://localhost:8100 fails: "localhost" inside the
+# Dify api container is that container, not your host.
+services:
+  mailrag:
+    networks:
+      - default
+      - dify
+
+networks:
+  dify:
+    external: true
+    name: ${DIFY_NETWORK:-docker_default}

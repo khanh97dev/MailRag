@@ -1,0 +1,28 @@
+services:
+  mailrag:
+    build: .
+    image: mailrag:local
+    container_name: mailrag
+    restart: unless-stopped
+    environment:
+      # The bearer token Dify sends. Change it in .env; never commit a real one.
+      MAILRAG_API_KEY: ${MAILRAG_API_KEY:-mailrag-demo-key}
+      MAILRAG_KNOWLEDGE_ID: ${MAILRAG_KNOWLEDGE_ID:-emails}
+      MAILRAG_DB: /data/mailrag.sqlite
+      MAILRAG_MAIL_DIR: /app/samples
+    ports:
+      # Host port only for curl-ing it yourself; Dify reaches it over the shared
+      # network as http://mailrag:8000 (see docker-compose.dify.yml).
+      - "${MAILRAG_PORT:-8100}:8000"
+    volumes:
+      # Point this at your own maildir to demo on real mail instead of samples.
+      - ${MAILRAG_MAIL_SOURCE:-./samples}:/app/samples:ro
+      - mailrag-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  mailrag-data:

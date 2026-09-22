@@ -1,0 +1,21 @@
+From: Linh Pham <linh.pham@northbridge.example>
+To: Sales <sales@kainetworks.example>
+Subject: PO-48812 issued against QT-2026-0188
+Date: Wed, 18 Feb 2026 11:02:47 +0700
+Message-ID: <po-48812@northbridge.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hello Minh,
+
+PO-48812 is approved and attached. It covers the switches and SmartNet only:
+
+  C9300-24T-A            12 units   USD 2,480.00 each   USD 29,760.00
+  SmartNet 8x5xNBD 3yr   12 units   USD   312.00 each   USD  3,744.00
+  PO total (ex VAT)                                     USD 33,504.00
+
+We dropped the uplink modules from this order; they will follow on a separate PO
+once the rack layout is final. Requested delivery date is 6 March 2026.
+
+Regards,
+Linh

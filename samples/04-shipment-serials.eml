@@ -1,0 +1,28 @@
+From: Logistics <logistics@kainetworks.example>
+To: Linh Pham <linh.pham@northbridge.example>
+Cc: Sales <sales@kainetworks.example>
+Subject: PO-48812 shipped - serials and invoice INV-2026-0451
+Date: Tue, 03 Mar 2026 08:25:11 +0700
+Message-ID: <ship-po-48812@kainetworks.example>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Dear Linh,</p>
+<p>8 of the 12 switches on <b>PO-48812</b> shipped today under invoice
+<b>INV-2026-0451</b>, tracking <b>DHL 7761 4432 019</b>.</p>
+<table border="1">
+<tr><th>Serial</th><th>Model</th><th>Warranty start</th></tr>
+<tr><td>FOC2512A1BC</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BD</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BE</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BF</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BG</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BH</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BJ</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+<tr><td>FOC2512A1BK</td><td>C9300-24T-A</td><td>2026-03-03</td></tr>
+</table>
+<p>The remaining 4 units are held at Singapore customs; our operations team will
+confirm the new date separately.</p>
+<p>Regards,<br>Kai Networks Logistics</p>
+</body></html>

@@ -1,0 +1,21 @@
+From: Sales <sales@kainetworks.example>
+To: Customers <customers@kainetworks.example>
+Subject: Price update effective 1 May 2026 - Catalyst 9300 series
+Date: Thu, 02 Apr 2026 09:00:00 +0700
+Message-ID: <price-update-may-2026@kainetworks.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Dear customers,
+
+Cisco has adjusted distribution pricing for the Catalyst 9300 series. From
+1 May 2026 our prices change as follows:
+
+  C9300-24T-A     USD 2,480.00 -> USD 2,610.00   (+5.2%)
+  C9300-48T-A     USD 3,940.00 -> USD 4,140.00   (+5.1%)
+  C9300-NM-8X     USD   890.00 -> USD   890.00   (no change)
+
+Quotes issued before 30 April 2026 stay honoured at the old price for their full
+30-day validity, including QT-2026-0188.
+
+Kai Networks Sales
