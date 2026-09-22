@@ -98,6 +98,21 @@ Then run it and ask something the archive can actually answer:
 You should get the quoted `USD 2,480.00`, the increase to `USD 2,610.00`, and
 `[Source N]` markers matching the citation list under the answer.
 
+![the answer, its inline Source markers and the five retrieved excerpts](docs/demo-answer-en.png)
+
+That answer is not a mock-up: it is this repo's own `/retrieval` call, the Code
+node's transform and the LLM node's prompt, all read straight out of
+`mailrag-chatflow.yml` and run head-to-tail. The model is a local
+`qwen3-vl-30b` standing in for Groq, because the Groq key lives in Dify rather
+than in this repo — swap in Groq and the retrieval, the excerpts and the
+citations are identical, since only the last step changes.
+
+Worth reading the source list rather than just the answer: three of the five
+excerpts score `0.0`, and the price came from one of them. BM25 normalises the
+top hit to `1.0`, so `score_threshold` above `0` would have thrown away
+`03-po-48812.eml` and with it the `USD 2,480.00` — which is why the DSL ships
+`score_threshold: 0` and leaves the judgement to the prompt.
+
 ## The contract
 
 ```http
@@ -211,6 +226,12 @@ Demo: **workflow Dify gọi RAG API lấy dữ liệu email**, trả lời có t
    node LLM. Key Groq nằm ở Dify, **không** nằm trong repo này.
 5. Hỏi thử: *"Ngày giao mới của 4 thiết bị còn lại của PO-48812 là ngày nào?"* →
    phải trả lời `12/03/2026` kèm `[Source N]`.
+
+![câu trả lời tiếng Việt kèm Source 1 và năm đoạn trích được lấy về](docs/demo-answer-vi.png)
+
+Câu hỏi tiếng Việt, mail nguồn tiếng Việt, và câu trả lời trích đúng
+`05-cham-giao-hang.eml`. Ảnh này chạy bằng model local `qwen3-vl-30b` thay cho
+Groq — phần retrieval và trích dẫn không đổi.
 
 Dữ liệu mẫu trong `samples/` là email hư cấu (EN + VI) có sẵn số PO, số serial, giá
 và ngày để kiểm tra câu trả lời có đúng nguồn hay không. Muốn chạy với mail thật:
