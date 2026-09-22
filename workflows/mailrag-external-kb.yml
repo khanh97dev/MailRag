@@ -1,0 +1,186 @@
+# MailRag — the same service wired as a Dify External Knowledge Base.
+#
+# Start (sys.query) -> Knowledge Retrieval -> LLM (context) -> Answer
+#
+# Here Dify does the calling: you register MailRag once under Knowledge -> External
+# Knowledge API, create an external knowledge base on top of it, and Dify hits
+# POST /retrieval itself. The workflow shrinks to three nodes, and Dify's own
+# citation panel renders the sources, because retrieved chunks arrive as the LLM
+# node's `context` instead of as a string we formatted by hand.
+#
+# Trade-off against mailrag-chatflow.yml (the HTTP-node version):
+#   external KB  -> less to build, native citations, retrieval settings in the UI;
+#                   needs the knowledge base created first, so `dataset_ids` below
+#                   is empty on purpose -- pick your KB in the node after import.
+#   HTTP node    -> imports and runs immediately, and you control the request
+#                   body, so extra parameters (filters, date ranges) are yours.
+#
+# Written against Dify 1.16 (DSL 0.6.0) — the schema this repo was built on.
+app:
+  name: MailRag (external knowledge base)
+  mode: advanced-chat
+  icon: 🗂️
+  icon_type: emoji
+  icon_background: '#EFF1F5'
+  description: Same email archive, retrieved through Dify's external knowledge base
+    integration instead of a hand-written HTTP call.
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+      allowed_file_types:
+      - image
+      allowed_file_extensions: []
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      number_limits: 3
+    opening_statement: Ask about the mail archive. Answers cite the message they came
+      from — open the citation panel to read it.
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.9
+    nodes:
+    - id: start1
+      type: custom
+      position:
+        x: 80
+        y: 282
+      data:
+        type: start
+        title: Start
+        desc: ''
+        selected: false
+        variables: []
+    - id: kr1
+      type: custom
+      position:
+        x: 380
+        y: 282
+      data:
+        type: knowledge-retrieval
+        title: Retrieve from archive
+        desc: Select your MailRag external knowledge base here after importing.
+        selected: false
+        query_variable_selector:
+        - sys
+        - query
+        query_attachment_selector: []
+        # Left empty deliberately: a knowledge base id only exists inside your own
+        # Dify workspace, so a hardcoded one would import broken.
+        dataset_ids: []
+        retrieval_mode: multiple
+        multiple_retrieval_config:
+          top_k: 5
+          score_threshold: null
+          reranking_enable: false
+    - id: llm1
+      type: custom
+      position:
+        x: 680
+        y: 282
+      data:
+        type: llm
+        title: Answer from excerpts
+        desc: Retrieved chunks arrive as `context`, which is also what drives Dify's
+          citation panel.
+        selected: false
+        model:
+          provider: langgenius/groq/groq
+          name: llama-3.3-70b-versatile
+          mode: chat
+          completion_params:
+            temperature: 0
+        prompt_template:
+        - role: system
+          text: 'You answer questions about an archive of email, using only the retrieved
+            excerpts in your context.
+
+
+            Rules:
+
+            - Use only the excerpts. Never add facts from your own knowledge.
+
+            - Quote identifiers, part numbers, quantities, prices and dates exactly
+            as they appear.
+
+            - If the excerpts do not contain the answer, say so plainly and name what
+            is missing. Do not guess.
+
+            - If two excerpts disagree, say so.
+
+            - Reply in the same language as the question.
+
+            - Answer first, supporting detail after.'
+        - role: user
+          text: '{{#sys.query#}}'
+        context:
+          enabled: true
+          variable_selector:
+          - kr1
+          - result
+        vision:
+          enabled: false
+    - id: answer1
+      type: custom
+      position:
+        x: 980
+        y: 282
+      data:
+        type: answer
+        title: Reply
+        desc: ''
+        selected: false
+        variables: []
+        answer: '{{#llm1.text#}}'
+    edges:
+    - id: start1-source-kr1-target
+      source: start1
+      target: kr1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: start
+        targetType: knowledge-retrieval
+        isInIteration: false
+    - id: kr1-source-llm1-target
+      source: kr1
+      target: llm1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: knowledge-retrieval
+        targetType: llm
+        isInIteration: false
+    - id: llm1-source-answer1-target
+      source: llm1
+      target: answer1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: llm
+        targetType: answer
+        isInIteration: false

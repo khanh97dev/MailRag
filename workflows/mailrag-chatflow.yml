@@ -1,0 +1,295 @@
+# MailRag — Chatflow that asks an external RAG service for its data.
+#
+# Start (sys.query) -> HTTP Request -> Code (format records) -> LLM -> Answer
+#
+# The HTTP Request node calls the MailRag service on Dify's own contract for
+# external knowledge (POST /retrieval), so the exact same endpoint also works as
+# a Dify External Knowledge Base -- see workflows/mailrag-external-kb.yml.
+#
+# Import: Dify -> Studio -> Create from DSL -> upload this file.
+# Then set, in the two places the import cannot know about:
+#   1. the LLM node's model (a Groq model, once the Groq plugin has your key), and
+#   2. the HTTP node's Bearer token, if you changed MAILRAG_API_KEY.
+#
+# Written against Dify 1.16 (DSL 0.6.0) — the schema this repo was built on.
+app:
+  name: MailRag
+  mode: advanced-chat
+  icon: 📧
+  icon_type: emoji
+  icon_background: '#EFF1F5'
+  description: Answers questions about an email archive, grounded in chunks retrieved
+    from the MailRag service and cited back to the message they came from.
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+      allowed_file_types:
+      - image
+      allowed_file_extensions: []
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      number_limits: 3
+    opening_statement: 'Ask me anything about the mail archive — a PO number, a price,
+      a serial number, a delivery date. I answer only from the archive, and I cite
+      the message.'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - What was quoted for PO-48812, and at what unit price?
+    - Which serial numbers shipped to Northbridge in March?
+    - Đơn hàng nào bị giao chậm, và lý do là gì?
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.8
+    nodes:
+    - id: start1
+      type: custom
+      position:
+        x: 80
+        y: 282
+      data:
+        type: start
+        title: Start
+        desc: 'In a Chatflow the user message arrives as sys.query: no input variables
+          to declare.'
+        selected: false
+        variables: []
+    - id: http1
+      type: custom
+      position:
+        x: 380
+        y: 282
+      data:
+        type: http-request
+        title: Retrieve from MailRag
+        desc: POST /retrieval — Dify's external-knowledge contract, spoken by our own
+          service.
+        selected: false
+        variables: []
+        method: post
+        # "mailrag" is the container name on Dify's docker network. Reaching a
+        # private address from a node also needs Dify's SSRF proxy to allow it:
+        # SSRF_PROXY_ALLOW_PRIVATE_DOMAINS=mailrag in docker/.env. See README.
+        url: http://mailrag:8000/retrieval
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: mailrag-demo-key
+            header: Authorization
+        headers: 'Content-Type:application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - id: body1
+            type: text
+            key: ''
+            # top_k is deliberately small: a chat answer that cites eight
+            # different mails is not an answer, it is a reading list.
+            value: '{"knowledge_id": "emails", "query": "{{#sys.query#}}", "retrieval_setting":
+              {"top_k": 5, "score_threshold": 0}}'
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        retry_config:
+          retry_enabled: true
+          max_retries: 3
+          retry_interval: 100
+    - id: code1
+      type: custom
+      position:
+        x: 680
+        y: 282
+      data:
+        type: code
+        title: Format records
+        desc: JSON records -> numbered excerpts for the prompt, plus a citation list
+          for the reader.
+        selected: false
+        code_language: python3
+        code: |
+          import json
+
+
+          def main(response: str) -> dict:
+              """records from /retrieval -> context for the model, sources for the reader."""
+              try:
+                  records = (json.loads(response) or {}).get("records", [])
+              except Exception:
+                  records = []
+
+              blocks, cites = [], []
+              for i, record in enumerate(records, start=1):
+                  meta = record.get("metadata") or {}
+                  head = " | ".join(
+                      part
+                      for part in (
+                          record.get("title") or "",
+                          meta.get("from") or "",
+                          (meta.get("sent_at") or "")[:10],
+                      )
+                      if part
+                  )
+                  blocks.append(f"[Source {i}] {head}\n{record.get('content') or ''}")
+                  cites.append(f"{i}. {head} — {meta.get('source') or ''} (score {record.get('score')})")
+
+              # NO_RESULTS is a signal the prompt knows about: an empty context would
+              # otherwise invite the model to answer from its own memory.
+              return {
+                  "context": "\n\n".join(blocks) or "NO_RESULTS",
+                  "sources": "\n".join(cites),
+                  "count": len(records),
+              }
+        variables:
+        - variable: response
+          value_selector:
+          - http1
+          - body
+        outputs:
+          context:
+            type: string
+            children: null
+          sources:
+            type: string
+            children: null
+          count:
+            type: number
+            children: null
+    - id: llm1
+      type: custom
+      position:
+        x: 980
+        y: 282
+      data:
+        type: llm
+        title: Answer from excerpts
+        desc: Grounded generation. Facts come from the excerpts; the model only writes
+          the prose.
+        selected: false
+        model:
+          # Set your own provider/model after import: Settings -> Model Provider ->
+          # install "Groq", paste the key, then pick the model here.
+          provider: langgenius/groq/groq
+          name: llama-3.3-70b-versatile
+          mode: chat
+          completion_params:
+            temperature: 0
+        prompt_template:
+        - role: system
+          text: 'You answer questions about an archive of email, using only the excerpts
+            you are given.
+
+
+            Rules:
+
+            - Use only the numbered excerpts. Never add facts from your own knowledge.
+
+            - Quote identifiers, part numbers, quantities, prices and dates exactly
+            as they appear.
+
+            - Cite the excerpts you used inline, as [Source 1], [Source 2].
+
+            - If the excerpts are the text NO_RESULTS, or do not contain the answer,
+            say so plainly and name what is missing. Do not guess, and never offer
+            a likely-looking number.
+
+            - If two excerpts disagree, say so and cite both.
+
+            - Reply in the same language as the question.
+
+            - Answer first, supporting detail after.'
+        - role: user
+          text: 'Email excerpts:
+
+
+            {{#code1.context#}}
+
+
+            Question: {{#sys.query#}}'
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+    - id: answer1
+      type: custom
+      position:
+        x: 1280
+        y: 282
+      data:
+        type: answer
+        title: Reply
+        desc: The answer, followed by the sources it was allowed to use.
+        selected: false
+        variables: []
+        answer: '{{#llm1.text#}}
+
+
+          ---
+
+          **Sources**
+
+          {{#code1.sources#}}'
+    edges:
+    - id: start1-source-http1-target
+      source: start1
+      target: http1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: start
+        targetType: http-request
+        isInIteration: false
+    - id: http1-source-code1-target
+      source: http1
+      target: code1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: http-request
+        targetType: code
+        isInIteration: false
+    - id: code1-source-llm1-target
+      source: code1
+      target: llm1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: code
+        targetType: llm
+        isInIteration: false
+    - id: llm1-source-answer1-target
+      source: llm1
+      target: answer1
+      sourceHandle: source
+      targetHandle: target
+      type: custom
+      data:
+        sourceType: llm
+        targetType: answer
+        isInIteration: false
